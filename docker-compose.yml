@@ -1,0 +1,13 @@
+services:
+  nginx:
+    image: ecs-nginx:v1.1
+    ports:
+      - "80:80"
+  app:
+    image: ecs-laravel-app:v1.1
+    environment:
+      - SESSION_DRIVER=file
+  # app:
+  #   image: ghcr.io/yoshitaka-motomura/php:8.2.17
+  #   volumes:
+  #     - ./backend:/var/www/html
