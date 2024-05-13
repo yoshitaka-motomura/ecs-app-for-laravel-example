@@ -54,7 +54,11 @@ export class EcsAppStack extends cdk.Stack {
      */
     const taskDefinition = new ecs.FargateTaskDefinition(
       this,
-      "MyTaskDefinition"
+      "MyTaskDefinition",
+      {
+        memoryLimitMiB: 1024,
+        cpu: 512,
+      }
     );
 
     // task definition append php-fpm container
