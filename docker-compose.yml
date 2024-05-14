@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: ecs-nginx:v1.1
+    image: ecs-nginx:v1.2
     ports:
       - "80:80"
   app:

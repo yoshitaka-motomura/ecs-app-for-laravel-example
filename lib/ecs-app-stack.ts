@@ -20,8 +20,8 @@ export class EcsAppStack extends cdk.Stack {
     /**
      * Represents the imported VPC.
      */
-    const vpc = new ec2.Vpc(this, "ImportedVpc", {
-      vpcName: "your_vpc_name",
+    const vpc = ec2.Vpc.fromLookup(this, "ImportedVpc", {
+      vpcName: "app-vpc",
     });
 
     /**
@@ -69,6 +69,8 @@ export class EcsAppStack extends cdk.Stack {
       portMappings: [
         {
           containerPort: 9000,
+          hostPort: 9000,
+          protocol: ecs.Protocol.TCP,
         },
       ],
     });
@@ -81,8 +83,11 @@ export class EcsAppStack extends cdk.Stack {
       portMappings: [
         {
           containerPort: 80,
+          hostPort: 80,
+          protocol: ecs.Protocol.TCP,
         },
       ],
+      essential: true,
     });
 
     // create the ECS service
