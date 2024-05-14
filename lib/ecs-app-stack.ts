@@ -9,6 +9,8 @@ import * as ecrdeploy from "cdk-ecr-deployment";
 import * as logs from "aws-cdk-lib/aws-logs";
 
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as route53 from "aws-cdk-lib/aws-route53";
+import * as targets from "aws-cdk-lib/aws-route53-targets";
 
 export class EcsAppStack extends cdk.Stack {
   /**
@@ -116,6 +118,19 @@ export class EcsAppStack extends cdk.Stack {
         },
       }
     );
+
+    // Route53 Hosted Zone
+    const hostedZone = route53.HostedZone.fromLookup(this, "HostedZone", {
+      domainName: "cristallum.io",
+    });
+
+    new route53.ARecord(this, "AliasRecord", {
+      zone: hostedZone,
+      recordName: "sirius.cristallum.io",
+      target: route53.RecordTarget.fromAlias(
+        new targets.LoadBalancerTarget(ecsService.loadBalancer)
+      ),
+    });
 
     // Output the DNS where you can access your service
     new cdk.CfnOutput(this, "LoadBalancerDNS", {
