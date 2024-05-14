@@ -33,6 +33,11 @@ export class EcsAppStack extends cdk.Stack {
       throw new Error("CERTIFICATE_ARN environment variable is not set");
     }
 
+    const imageTag = process.env.IMAGE_TAG;
+    if (!imageTag) {
+      throw new Error("IMAGE_TAG environment variable is not set");
+    }
+
     // AWS Account and Region
     const { accountId, region } = new cdk.ScopedAws(this);
 
@@ -64,7 +69,7 @@ export class EcsAppStack extends cdk.Stack {
     new ecrdeploy.ECRDeployment(this, "DeployNginxImage", {
       src: new ecrdeploy.DockerImageName(nginxImageAsset.imageUri),
       dest: new ecrdeploy.DockerImageName(
-        `${accountId}.dkr.ecr.${region}.amazonaws.com/${ecrNginxRepo.repositoryName}:latest`
+        `${accountId}.dkr.ecr.${region}.amazonaws.com/${ecrNginxRepo.repositoryName}:${imageTag}`
       ),
     });
 
@@ -118,7 +123,7 @@ export class EcsAppStack extends cdk.Stack {
         taskImageOptions: {
           family: `${resourceName}-taskdef`,
           containerName: `${resourceName}-container`,
-          image: ecs.ContainerImage.fromEcrRepository(ecrNginxRepo, "latest"),
+          image: ecs.ContainerImage.fromEcrRepository(ecrNginxRepo, imageTag),
           logDriver: new ecs.AwsLogDriver({
             logGroup: logGroup,
             streamPrefix: `${resourceName}-container`,

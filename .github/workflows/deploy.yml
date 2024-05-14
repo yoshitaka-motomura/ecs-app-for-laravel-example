@@ -1,10 +1,9 @@
 name: CDK Deployment
 on:
   push:
-    branches:
-      - main
     tags:
-      - v*
+      - v[0-9]+.[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]+
   workflow_dispatch:
 
 jobs:
@@ -42,3 +41,4 @@ jobs:
         env:
           AWS_REGION: ap-northeast-1
           CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN }}
+          IMAGE_TAG: ${{ github.ref_name }}
