@@ -2,11 +2,11 @@ FROM node:20.13 as frontend
 
 WORKDIR /app
 
-COPY ./package*.json  .
+COPY ./package*.json  ./
 
 RUN npm ci
 
-COPY . .
+COPY . ./
 
 RUN npm run build
 
