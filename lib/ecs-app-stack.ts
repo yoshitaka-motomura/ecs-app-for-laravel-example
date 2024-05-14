@@ -126,10 +126,10 @@ export class EcsAppStack extends cdk.Stack {
         },
         healthCheck: {
           command: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
-          interval: cdk.Duration.minutes(30),
+          interval: cdk.Duration.seconds(300),
           retries: 3,
-          startPeriod: cdk.Duration.minutes(30),
-          timeout: cdk.Duration.minutes(5),
+          startPeriod: cdk.Duration.seconds(300),
+          timeout: cdk.Duration.seconds(30),
         },
       }
     );
