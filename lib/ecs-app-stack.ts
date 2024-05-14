@@ -8,6 +8,8 @@ import * as ecr from "aws-cdk-lib/aws-ecr";
 import * as ecrdeploy from "cdk-ecr-deployment";
 import * as logs from "aws-cdk-lib/aws-logs";
 
+import * as acm from "aws-cdk-lib/aws-certificatemanager";
+
 export class EcsAppStack extends cdk.Stack {
   /**
    * Represents the ECS App Stack.
@@ -19,6 +21,11 @@ export class EcsAppStack extends cdk.Stack {
    */
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const certificateArn = process.env.CERTIFICATE_ARN;
+    if (!certificateArn) {
+      throw new Error("CERTIFICATE_ARN environment variable is not set");
+    }
 
     const { accountId, region } = new cdk.ScopedAws(this);
     const resourceName = "sirius";
@@ -75,6 +82,13 @@ export class EcsAppStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // ACM Certificate
+    const certificate = acm.Certificate.fromCertificateArn(
+      this,
+      "Certificate",
+      certificateArn
+    );
+
     const ecsService = new ecs_patterns.ApplicationLoadBalancedFargateService(
       this,
       "FargateService",
@@ -87,6 +101,9 @@ export class EcsAppStack extends cdk.Stack {
         memoryLimitMiB: 1024,
         desiredCount: 2,
         assignPublicIp: true,
+        protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+        listenerPort: 443,
+        certificate: certificate,
         taskSubnets: { subnetType: ec2.SubnetType.PUBLIC },
         taskImageOptions: {
           family: `${resourceName}-taskdef`,
@@ -100,88 +117,10 @@ export class EcsAppStack extends cdk.Stack {
       }
     );
 
-    // /**
-    //  * Represents the imported VPC.
-    //  */
-    // const vpc = ec2.Vpc.fromLookup(this, "ImportedVpc", {
-    //   vpcName: "app-vpc",
-    // });
-
-    // /**
-    //  * Represents the ECS cluster for the EcsService.
-    //  */
-    // const cluster = new ecs.Cluster(this, "EcsServiceCluster", {
-    //   vpc: vpc,
-    // });
-
-    // /**
-    //  * Docker image asset for PHP-FPM.
-    //  */
-    // const phpFpmImage = new ecr_assets.DockerImageAsset(this, "PhpFpmImage", {
-    //   directory: ".",
-    //   file: "dockerfile/php/Dockerfile",
-    //   platform: ecr_assets.Platform.LINUX_AMD64,
-    // });
-
-    // /**
-    //  * Docker image asset for Nginx.
-    //  */
-    // const nginxImage = new ecr_assets.DockerImageAsset(this, "NginxImage", {
-    //   directory: ".",
-    //   file: "dockerfile/nginx/Dockerfile",
-    //   platform: ecr_assets.Platform.LINUX_AMD64,
-    // });
-
-    // /**
-    //  * Task definition for the ECS service.
-    //  */
-    // const taskDefinition = new ecs.FargateTaskDefinition(
-    //   this,
-    //   "MyTaskDefinition",
-    //   {
-    //     memoryLimitMiB: 1024,
-    //     cpu: 512,
-    //   }
-    // );
-
-    // // task definition append php-fpm container
-    // taskDefinition.addContainer("app", {
-    //   image: ecs.ContainerImage.fromDockerImageAsset(phpFpmImage),
-    //   memoryLimitMiB: 512,
-    //   cpu: 256,
-    //   portMappings: [
-    //     {
-    //       containerPort: 9000,
-    //       hostPort: 9000,
-    //       protocol: ecs.Protocol.TCP,
-    //     },
-    //   ],
-    // });
-
-    // // task definition append nginx container
-    // taskDefinition.addContainer("nginx", {
-    //   image: ecs.ContainerImage.fromDockerImageAsset(nginxImage),
-    //   memoryLimitMiB: 512,
-    //   cpu: 256,
-    //   portMappings: [
-    //     {
-    //       containerPort: 80,
-    //       hostPort: 80,
-    //       protocol: ecs.Protocol.TCP,
-    //     },
-    //   ],
-    //   essential: true,
-    // });
-
-    // // create the ECS service
-    // new ecs_patterns.ApplicationLoadBalancedFargateService(
-    //   this,
-    //   "MyFargateService",
-    //   {
-    //     cluster: cluster,
-    //     taskDefinition: taskDefinition,
-    //     publicLoadBalancer: true,
-    //   }
-    // );
+    // Output the DNS where you can access your service
+    new cdk.CfnOutput(this, "LoadBalancerDNS", {
+      value: ecsService.loadBalancer.loadBalancerDnsName,
+      description: "Load Balancer DNS",
+    });
   }
 }

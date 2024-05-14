@@ -41,3 +41,4 @@ jobs:
           npx cdk deploy --require-approval never
         env:
           AWS_REGION: ap-northeast-1
+          CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN }}
