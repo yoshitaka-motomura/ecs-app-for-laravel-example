@@ -1,8 +1,12 @@
-# Welcome to your CDK TypeScript project
+# ECS Fargate Deployment Example for CDK
 
-This is a blank project for CDK development with TypeScript.
+## Overview
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+This is a simple example of deploying a containerized application to AWS ECS Fargate using the AWS CDK.
+
+## Example
+
+[ECS Example](https://sirius.cristallum.io/)
 
 ## Useful commands
 
