@@ -24,14 +24,22 @@ export class EcsAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    /**
+     * The ARN of the ACM certificate to use for the load balancer.
+     * @type {string}
+     */
     const certificateArn = process.env.CERTIFICATE_ARN;
     if (!certificateArn) {
       throw new Error("CERTIFICATE_ARN environment variable is not set");
     }
 
+    // AWS Account and Region
     const { accountId, region } = new cdk.ScopedAws(this);
+
+    // Resource name
     const resourceName = "sirius";
 
+    // Create ECR repository for Nginx
     const ecrNginxRepo = new ecr.Repository(
       this,
       `${resourceName}-nginx-repo`,
@@ -52,6 +60,7 @@ export class EcsAppStack extends cdk.Stack {
       }
     );
 
+    // Deploy Nginx image to ECR
     new ecrdeploy.ECRDeployment(this, "DeployNginxImage", {
       src: new ecrdeploy.DockerImageName(nginxImageAsset.imageUri),
       dest: new ecrdeploy.DockerImageName(
@@ -60,7 +69,6 @@ export class EcsAppStack extends cdk.Stack {
     });
 
     // Create VPC
-
     const vpc = new ec2.Vpc(this, "Vpc", {
       maxAzs: 2,
       vpcName: `${resourceName}-vpc`,
@@ -99,9 +107,9 @@ export class EcsAppStack extends cdk.Stack {
         publicLoadBalancer: true,
         cluster: cluster,
         serviceName: `${resourceName}-service`,
-        cpu: 512,
-        memoryLimitMiB: 1024,
-        desiredCount: 2,
+        cpu: 256,
+        memoryLimitMiB: 512,
+        desiredCount: 1,
         assignPublicIp: true,
         protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
         listenerPort: 443,
@@ -115,6 +123,13 @@ export class EcsAppStack extends cdk.Stack {
             logGroup: logGroup,
             streamPrefix: `${resourceName}-container`,
           }),
+        },
+        healthCheck: {
+          command: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
+          interval: cdk.Duration.minutes(30),
+          retries: 3,
+          startPeriod: cdk.Duration.minutes(30),
+          timeout: cdk.Duration.minutes(5),
         },
       }
     );
