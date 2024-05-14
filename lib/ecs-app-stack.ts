@@ -115,7 +115,8 @@ export class EcsAppStack extends cdk.Stack {
         cpu: 256,
         memoryLimitMiB: 512,
         desiredCount: 1,
-        assignPublicIp: true,
+        assignPublicIp: false,
+        //enableExecuteCommand: true, // Enable ECS Exec
         protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
         listenerPort: 443,
         certificate: certificate,
