@@ -36,8 +36,7 @@ export class EcsAppStack extends cdk.Stack {
       this,
       "NginxImage",
       {
-        directory: ".",
-        file: "dockerfile/spa/Dockerfile",
+        directory: "./app",
         platform: ecr_assets.Platform.LINUX_AMD64,
       }
     );
