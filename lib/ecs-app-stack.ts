@@ -6,6 +6,8 @@ import * as ecs_patterns from "aws-cdk-lib/aws-ecs-patterns";
 import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as ecr from "aws-cdk-lib/aws-ecr";
 import * as ecrdeploy from "cdk-ecr-deployment";
+import * as logs from "aws-cdk-lib/aws-logs";
+
 export class EcsAppStack extends cdk.Stack {
   /**
    * Represents the ECS App Stack.
@@ -47,6 +49,56 @@ export class EcsAppStack extends cdk.Stack {
         `${accountId}.dkr.ecr.${region}.amazonaws.com/${ecrNginxRepo.repositoryName}:latest`
       ),
     });
+
+    // Create VPC
+
+    const vpc = new ec2.Vpc(this, "Vpc", {
+      maxAzs: 2,
+      vpcName: `${resourceName}-vpc`,
+      ipAddresses: ec2.IpAddresses.cidr("10.0.0.0/20"),
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: `${resourceName}-public`,
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+      ],
+    });
+
+    const cluster = new ecs.Cluster(this, "Cluster", {
+      vpc: vpc,
+      clusterName: `${resourceName}-cluster`,
+    });
+
+    const logGroup = new logs.LogGroup(this, "LogGroup", {
+      logGroupName: `/aws/ecs/${resourceName}`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const ecsService = new ecs_patterns.ApplicationLoadBalancedFargateService(
+      this,
+      "FargateService",
+      {
+        loadBalancerName: `${resourceName}-lb`,
+        publicLoadBalancer: true,
+        cluster: cluster,
+        serviceName: `${resourceName}-service`,
+        cpu: 512,
+        memoryLimitMiB: 1024,
+        desiredCount: 2,
+        assignPublicIp: true,
+        taskSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+        taskImageOptions: {
+          family: `${resourceName}-taskdef`,
+          containerName: `${resourceName}-container`,
+          image: ecs.ContainerImage.fromEcrRepository(ecrNginxRepo, "latest"),
+          logDriver: new ecs.AwsLogDriver({
+            logGroup: logGroup,
+            streamPrefix: `${resourceName}-container`,
+          }),
+        },
+      }
+    );
 
     // /**
     //  * Represents the imported VPC.
